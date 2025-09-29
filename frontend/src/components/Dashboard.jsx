@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Award, BookOpen, TrendingUp } from "lucide-react";
 import heroImage from "@/assets/hero-learning.jpg";
-import Sidebar from './Sidebar';
 
 const styles = {
   container: {
@@ -203,10 +202,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div style={{ display: 'flex' }}>
-      <Sidebar />
-      <main style={{ flexGrow: 1, padding: '2rem' }}>
-        <div style={styles.header}>
+    <main style={{ marginLeft: '256px', padding: '2rem', minHeight: '100vh' }}>
+      <div style={styles.header}>
           <div>
             <h1 style={styles.title}>Dashboard</h1>
             <p style={styles.subtitle}>Welcome back, let's continue learning!</p>
@@ -322,8 +319,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+    </main>
   );
 };
 

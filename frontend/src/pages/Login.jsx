@@ -21,17 +21,20 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post('http://localhost:5001/api/auth/login', formData);
+      const res = await axios.post('http://localhost:5002/api/auth/login', formData);
       
       localStorage.setItem('token', res.data.token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
       
       console.log('Login successful:', res.data);
-      navigate('/dashboard');
+      
+      // Force page reload to ensure authentication state is recognized
+      window.location.href = '/';
 
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
-      console.error('Login error:', err);
+      const errorMessage = err.response?.data?.error || 'Login failed';
+      setError(errorMessage);
+      console.error('Login error:', errorMessage, err.response?.data);
     } finally {
       setLoading(false);
     }

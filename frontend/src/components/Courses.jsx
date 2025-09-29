@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from 'axios';
 import TalkingAvatar from "./TalkingAvatar";
 
 const styles = {
@@ -415,6 +416,48 @@ const Courses = () => {
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+
+  // Load saved courses from backend
+  const loadSavedCourses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setIsLoadingCourses(false);
+        return;
+      }
+
+      const response = await axios.get('http://localhost:5002/api/courses', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      // Transform backend courses to match frontend format
+      const transformedCourses = response.data.courses.map(course => ({
+        id: course._id,
+        title: course.courseTitle,
+        thumbnail: course.thumbnail || '/placeholder.svg',
+        progress: course.progressPercentage || 0,
+        lessons: course.lessons || [],
+        originalCourse: course // Keep reference to original course data
+      }));
+
+      setCourses(transformedCourses);
+    } catch (error) {
+      console.error('Error loading saved courses:', error);
+      // If unauthorized, just continue without courses
+      if (error.response?.status !== 401) {
+        alert('Failed to load saved courses');
+      }
+    } finally {
+      setIsLoadingCourses(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSavedCourses();
+  }, []);
   
   const getProgressColor = (progress) => {
     if (progress === 0) return 'hsl(215, 16%, 47%)';
@@ -479,16 +522,66 @@ const Courses = () => {
         }
       }
 
-      // Step 3: Create the complete course object
+      // Step 3: Save course to database
+      const token = localStorage.getItem('token');
+      let savedCourse = null;
+      
+      if (token) {
+        try {
+          const coursePayload = {
+            courseTitle: courseData.courseTitle,
+            description: courseData.description || `A comprehensive course about ${inputValue}`,
+            topic: inputValue,
+            lessons: lessonsWithContent.map((lesson, index) => ({
+              lessonTitle: lesson.lessonTitle,
+              objectives: lesson.objectives || [],
+              content: (lesson.content || []).map((page, pageIndex) => ({
+                pageNumber: pageIndex + 1,
+                sections: (page.sections || []).map(section => ({
+                  title: section.title || 'Section Title',
+                  content: section.content || '',
+                  examples: section.examples || [],
+                  steps: section.steps || [],
+                  code: section.code || '',
+                  order: 0
+                }))
+              })),
+              order: index + 1
+            })),
+            difficulty: courseData.difficulty || 'beginner',
+            tags: [inputValue]
+          };
+
+          const saveResponse = await axios.post('http://localhost:5002/api/courses', coursePayload, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          savedCourse = saveResponse.data;
+          console.log('Course saved successfully:', savedCourse);
+        } catch (saveError) {
+          console.error('Error saving course to database:', saveError);
+          alert('Course generated but failed to save. You can still view it now.');
+        }
+      }
+
+      // Step 4: Create the complete course object for immediate display
       const newCourse = {
-        id: Date.now(),
+        id: savedCourse?._id || Date.now(),
         title: courseData.courseTitle,
         thumbnail: '/placeholder.svg',
         progress: 0,
-        lessons: lessonsWithContent
+        lessons: lessonsWithContent,
+        originalCourse: savedCourse
       };
 
-      // Step 4: Display the course immediately
+      // Step 5: Update courses list and display immediately
+      if (savedCourse) {
+        setCourses(prev => [newCourse, ...prev]);
+      }
+      
       setSelectedCourse(newCourse);
       setSelectedLesson(lessonsWithContent[0] || null);
       setCurrentPage(0);
@@ -502,7 +595,40 @@ const Courses = () => {
     }
   };
 
-  const handleCourseClick = (course) => {
+  const handleCourseClick = async (course) => {
+    try {
+      // If course has originalCourse data and is saved in database, fetch fresh data
+      if (course.originalCourse && course.originalCourse._id) {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const response = await axios.get(`http://localhost:5002/api/courses/${course.originalCourse._id}`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          
+          // Transform the fetched course data
+          const fetchedCourse = {
+            id: response.data._id,
+            title: response.data.courseTitle,
+            thumbnail: response.data.thumbnail || '/placeholder.svg',
+            progress: response.data.progressPercentage || 0,
+            lessons: response.data.lessons || [],
+            originalCourse: response.data
+          };
+          
+          setSelectedCourse(fetchedCourse);
+          setSelectedLesson(fetchedCourse.lessons[0] || null);
+          setCurrentPage(0);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching course from database:', error);
+      // Fall back to using the course data we have
+    }
+    
+    // Fallback: use the course data we already have
     setSelectedCourse(course);
     setSelectedLesson(course.lessons[0] || null);
     setCurrentPage(0);
@@ -868,6 +994,16 @@ const Courses = () => {
           }}>
             <p style={{ fontSize: '16px', marginBottom: '8px' }}>Generating your course...</p>
             <p style={{ fontSize: '14px' }}>This may take a moment as we create all lesson content</p>
+          </div>
+        ) : isLoadingCourses ? (
+          <div style={{
+            gridColumn: '1 / -1',
+            textAlign: 'center',
+            padding: '60px 20px',
+            color: 'hsl(215, 16%, 47%)'
+          }}>
+            <p style={{ fontSize: '16px', marginBottom: '8px' }}>Loading your courses...</p>
+            <p style={{ fontSize: '14px' }}>Please wait while we fetch your saved courses</p>
           </div>
         ) : courses.length === 0 ? (
           <div style={{

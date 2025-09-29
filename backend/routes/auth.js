@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
 
     // Check if user already exists
     const existingUser = await User.findOne({
-      $or: [{ email }, { username }]
+      $or: [{ email }, { name: username }]
     });
 
     if (existingUser) {
@@ -46,7 +46,7 @@ router.post('/register', async (req, res) => {
 
     // Create new user
     const user = new User({
-      username,
+      name: username,
       email,
       password
     });
@@ -57,7 +57,7 @@ router.post('/register', async (req, res) => {
     const token = jwt.sign(
       { 
         userId: user._id,
-        username: user.username,
+        username: user.name,
         email: user.email
       },
       process.env.JWT_SECRET,
@@ -72,7 +72,7 @@ router.post('/register', async (req, res) => {
       token,
       user: {
         id: user._id,
-        username: user.username,
+        username: user.name,
         email: user.email,
         joinedAt: user.createdAt
       }
@@ -107,9 +107,9 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({
       $or: [
         { email: login.toLowerCase() },
-        { username: login }
+        { name: login }
       ]
-    });
+    }).select('+password'); // Include password field for comparison
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -128,21 +128,21 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { 
         userId: user._id,
-        username: user.username,
+        username: user.name,
         email: user.email
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    console.log(`User logged in: ${user.username}`);
+    console.log(`User logged in: ${user.name}`);
 
     res.json({
       message: 'Login successful',
       token,
       user: {
         id: user._id,
-        username: user.username,
+        username: user.name,
         email: user.email,
         lastLoginAt: user.lastLoginAt,
         preferences: user.preferences

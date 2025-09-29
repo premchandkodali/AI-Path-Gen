@@ -29,7 +29,7 @@ const Register = () => {
     }
 
     try {
-      const res = await axios.post('http://localhost:5001/api/auth/register', {
+      const res = await axios.post('http://localhost:5002/api/auth/register', {
         username: formData.username,
         email: formData.email,
         password: formData.password
@@ -39,11 +39,12 @@ const Register = () => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
       
       console.log('Registration successful:', res.data);
-      navigate('/dashboard');
+      navigate('/');
 
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed');
-      console.error('Registration error:', err);
+      const errorMessage = err.response?.data?.error || 'Registration failed';
+      setError(errorMessage);
+      console.error('Registration error:', errorMessage, err.response?.data);
     } finally {
       setLoading(false);
     }

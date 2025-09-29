@@ -13,7 +13,17 @@ const queryClient = new QueryClient();
 
 // Helper to check for token
 const isAuthenticated = () => {
-  return localStorage.getItem('token') !== null;
+  const token = localStorage.getItem('token');
+  if (!token) return false;
+  
+  // Check if token is valid (not expired)
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch (error) {
+    localStorage.removeItem('token'); // Remove invalid token
+    return false;
+  }
 };
 
 // Protected route component
@@ -107,7 +117,12 @@ const App = () => (
         }}
       >
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route 
+            path="/" 
+            element={
+              isAuthenticated() ? <Index /> : <Navigate to="/login" />
+            } 
+          />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route 

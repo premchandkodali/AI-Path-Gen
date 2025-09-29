@@ -4,21 +4,24 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 const styles = {
   container: {
     display: 'flex',
-    height: '100vh',
-    backgroundColor: 'hsl(220, 14%, 96%)'
+    height: 'calc(100vh - 0px)',
+    backgroundColor: 'hsl(220, 14%, 96%)',
+    marginLeft: '256px'
   },
   sidebar: {
-    width: '350px',
+    width: '320px',
     backgroundColor: 'hsl(0, 0%, 100%)',
     borderRight: '1px solid hsl(220, 13%, 91%)',
     overflowY: 'auto',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    minHeight: '100%'
   },
   sidebarHeader: {
-    padding: '20px',
+    padding: '16px',
     borderBottom: '1px solid hsl(220, 13%, 91%)',
-    backgroundColor: 'hsl(220, 14%, 96%)'
+    backgroundColor: 'hsl(220, 14%, 96%)',
+    flexShrink: 0
   },
   backButton: {
     display: 'flex',
@@ -45,7 +48,7 @@ const styles = {
     padding: '0'
   },
   lessonItem: {
-    padding: '16px 20px',
+    padding: '12px 16px',
     borderBottom: '1px solid hsl(220, 13%, 91%)',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
@@ -78,9 +81,10 @@ const styles = {
     overflow: 'hidden'
   },
   contentHeader: {
-    padding: '20px 24px',
+    padding: '16px 24px',
     backgroundColor: 'hsl(0, 0%, 100%)',
-    borderBottom: '1px solid hsl(220, 13%, 91%)'
+    borderBottom: '1px solid hsl(220, 13%, 91%)',
+    flexShrink: 0
   },
   contentTitle: {
     fontSize: '24px',
@@ -95,9 +99,11 @@ const styles = {
   },
   contentBody: {
     flex: 1,
-    padding: '24px',
+    padding: '16px 24px',
     overflowY: 'auto',
-    backgroundColor: 'hsl(0, 0%, 100%)'
+    backgroundColor: 'hsl(0, 0%, 100%)',
+    minHeight: 0,
+    maxHeight: 'calc(100vh - 180px)'
   },
   loadingContainer: {
     display: 'flex',
@@ -120,7 +126,11 @@ const styles = {
     fontSize: '14px'
   },
   section: {
-    marginBottom: '32px'
+    marginBottom: '20px',
+    padding: '16px',
+    backgroundColor: 'hsl(220, 20%, 98%)',
+    borderRadius: '8px',
+    border: '1px solid hsl(220, 13%, 91%)'
   },
   sectionTitle: {
     fontSize: '18px',
@@ -178,12 +188,13 @@ const styles = {
     whiteSpace: 'pre-wrap'
   },
   paginationContainer: {
-    padding: '16px 24px',
+    padding: '12px 24px',
     backgroundColor: 'hsl(0, 0%, 100%)',
     borderTop: '1px solid hsl(220, 13%, 91%)',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
+    flexShrink: 0
   },
   paginationButton: {
     padding: '8px 16px',
