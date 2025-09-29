@@ -202,7 +202,7 @@ const Dashboard = () => {
   };
 
   return (
-    <main style={{ marginLeft: '256px', padding: '2rem', minHeight: '100vh' }}>
+    <div style={styles.container}>
       <div style={styles.header}>
           <div>
             <h1 style={styles.title}>Dashboard</h1>
@@ -319,7 +319,7 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-    </main>
+    </div>
   );
 };
 

@@ -4,9 +4,8 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 const styles = {
   container: {
     display: 'flex',
-    height: 'calc(100vh - 0px)',
-    backgroundColor: 'hsl(220, 14%, 96%)',
-    marginLeft: '256px'
+    height: '100vh',
+    backgroundColor: 'hsl(220, 14%, 96%)'
   },
   sidebar: {
     width: '320px',
@@ -81,7 +80,7 @@ const styles = {
     overflow: 'hidden'
   },
   contentHeader: {
-    padding: '16px 24px',
+    padding: '20px 24px 16px 24px',
     backgroundColor: 'hsl(0, 0%, 100%)',
     borderBottom: '1px solid hsl(220, 13%, 91%)',
     flexShrink: 0
@@ -99,11 +98,10 @@ const styles = {
   },
   contentBody: {
     flex: 1,
-    padding: '16px 24px',
+    padding: '24px',
     overflowY: 'auto',
     backgroundColor: 'hsl(0, 0%, 100%)',
-    minHeight: 0,
-    maxHeight: 'calc(100vh - 180px)'
+    minHeight: 0
   },
   loadingContainer: {
     display: 'flex',
@@ -188,7 +186,7 @@ const styles = {
     whiteSpace: 'pre-wrap'
   },
   paginationContainer: {
-    padding: '12px 24px',
+    padding: '16px 24px',
     backgroundColor: 'hsl(0, 0%, 100%)',
     borderTop: '1px solid hsl(220, 13%, 91%)',
     display: 'flex',

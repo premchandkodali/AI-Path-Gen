@@ -9,7 +9,17 @@ const router = express.Router();
 // Register new user
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { 
+      username, 
+      email, 
+      password, 
+      pursuing, 
+      currentSkills, 
+      jobField, 
+      managingPeople, 
+      occupation, 
+      skillsToLearn 
+    } = req.body;
 
     // Validate required fields
     if (!username || !email || !password) {
@@ -44,11 +54,20 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Create new user
+    // Create new user with profile information
     const user = new User({
       name: username,
       email,
-      password
+      password,
+      // Store additional profile information
+      profile: {
+        pursuing: pursuing || '',
+        currentSkills: currentSkills || '',
+        jobField: jobField || '',
+        managingPeople: managingPeople || '',
+        occupation: occupation || '',
+        skillsToLearn: skillsToLearn || ''
+      }
     });
 
     await user.save();
@@ -74,6 +93,7 @@ router.post('/register', async (req, res) => {
         id: user._id,
         username: user.name,
         email: user.email,
+        profile: user.profile,
         joinedAt: user.createdAt
       }
     });
@@ -121,6 +141,33 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Initialize profile if it doesn't exist (for existing users)
+    if (!user.profile) {
+      await User.updateOne(
+        { _id: user._id },
+        { 
+          $set: { 
+            profile: {
+              pursuing: '',
+              currentSkills: '',
+              jobField: '',
+              managingPeople: '',
+              occupation: '',
+              skillsToLearn: ''
+            }
+          }
+        }
+      );
+      user.profile = {
+        pursuing: '',
+        currentSkills: '',
+        jobField: '',
+        managingPeople: '',
+        occupation: '',
+        skillsToLearn: ''
+      };
+    }
+
     // Update last login
     await user.updateLastLogin();
 
@@ -145,7 +192,8 @@ router.post('/login', async (req, res) => {
         username: user.name,
         email: user.email,
         lastLoginAt: user.lastLoginAt,
-        preferences: user.preferences
+        preferences: user.preferences,
+        profile: user.profile
       }
     });
 

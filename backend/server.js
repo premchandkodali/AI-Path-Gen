@@ -9,6 +9,8 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/auth');
 const courseRoutes = require('./routes/courses');
+const jobSearchRoutes = require('./routes/jobSearches');
+const profileRoutes = require('./routes/profile');
 
 const app = express();
 
@@ -21,10 +23,15 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use(helmet());
 app.use(morgan('combined'));
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:8081',
+  origin: [
+    'http://localhost:8080',
+    'http://localhost:8081',
+    'http://127.0.0.1:8080',
+    'http://127.0.0.1:8081'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -47,7 +54,9 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/api/health',
       auth: '/api/auth',
-      courses: '/api/courses'
+      courses: '/api/courses',
+      jobSearches: '/api/job-searches',
+      profile: '/api/profile'
     }
   });
 });
@@ -55,6 +64,8 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/job-searches', jobSearchRoutes);
+app.use('/api/profile', profileRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

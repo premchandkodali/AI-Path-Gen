@@ -137,7 +137,7 @@ const styles = {
   // Course View Layout Styles - Modern Premium Design
   courseViewContainer: {
     display: 'flex',
-    height: 'calc(100vh - 120px)',
+    height: '100vh',
     backgroundColor: 'hsl(220, 16%, 99%)',
     borderRadius: '16px',
     overflow: 'hidden',
@@ -400,10 +400,9 @@ const styles = {
     borderRadius: '8px'
   },
   highlightedWord: {
-    backgroundColor: 'hsl(45, 100%, 85%)',
-    padding: '2px 4px',
-    borderRadius: '4px',
-    transition: 'all 0.3s ease'
+    color: '#3b82f6',
+    backgroundColor: 'transparent',
+    fontWeight: 'bold'
   }
 
 };
@@ -663,23 +662,31 @@ const Courses = () => {
   const renderTextWithHighlights = (text) => {
     if (!text) return '';
     
-    const words = text.split(/(\s+)/);
-    return words.map((word, index) => {
-      const wordIndex = Math.floor(index / 2);
-      const isHighlighted = wordIndex === currentWordIndex;
+    // Split by spaces but keep spaces
+    const parts = text.split(/(\s+)/);
+    let wordIndex = 0;
+    
+    return parts.map((part, index) => {
+      // If it's not whitespace, it's a word
+      const isWord = !part.match(/^\s+$/) && part.trim().length > 0;
+      const isHighlighted = isWord && wordIndex === currentWordIndex;
+      
+      if (isWord) {
+        wordIndex++;
+      }
       
       return (
         <span
           key={index}
           style={isHighlighted ? styles.highlightedWord : {}}
         >
-          {word}
+          {part}
         </span>
       );
     });
   };
 
-  // Get current lesson content as text for speech
+  // Get current lesson content as text for speech (content only, matching what's displayed)
   const getCurrentLessonText = () => {
     if (!selectedLesson || !selectedLesson.content || !selectedLesson.content[currentPage]) return '';
     
@@ -687,13 +694,13 @@ const Courses = () => {
     let text = '';
     
     pageContent.sections?.forEach(section => {
-      if (section.title) text += section.title + '. ';
+      // Only include content text, not titles, to match what's highlighted
       if (section.content) text += section.content + ' ';
-      if (section.examples) text += 'Examples: ' + section.examples.join('. ') + ' ';
-      if (section.steps) text += 'Steps: ' + section.steps.join('. ') + ' ';
+      if (section.examples) text += section.examples.join(' ') + ' ';
+      if (section.steps) text += section.steps.join(' ') + ' ';
     });
     
-    return text;
+    return text.trim();
   };
 
   // If a course is selected, show the course view

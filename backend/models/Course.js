@@ -107,7 +107,7 @@ const courseSchema = new mongoose.Schema({
   lessons: [lessonSchema],
   thumbnail: {
     type: String,
-    default: '/placeholder.svg'
+    default: '/default-course.svg'
   },
   difficulty: {
     type: String,

@@ -1,4 +1,5 @@
-import { MapPin, Building, Calendar, ExternalLink, Briefcase, TrendingUp, Users } from "lucide-react";
+import { MapPin, Building, Calendar, ExternalLink, Briefcase, TrendingUp, Users, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const jobOpenings = [
   {
@@ -398,6 +399,122 @@ const styles = {
 };
 
 const CareerHub = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchedInsights, setSearchedInsights] = useState([]); // Array to store all search results
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [carouselIndex, setCarouselIndex] = useState(0); // Current carousel position
+
+  // Load previous job searches from database
+  const loadPreviousSearches = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5002/api/job-searches', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load previous searches');
+      }
+
+      const data = await response.json();
+      const formattedSearches = data.jobSearches.map(search => ({
+        id: search._id,
+        title: search.jobTitle,
+        growth: search.jobGrowth !== null ? `${search.jobGrowth > 0 ? '+' : ''}${search.jobGrowth}%` : "N/A",
+        avgSalary: search.avgSalary || "N/A",
+        openings: search.openPositions ? (search.openPositions / 1000).toFixed(1) + 'k' : "N/A",
+        icon: "🔍",
+        timestamp: new Date(search.searchedAt).toLocaleString(),
+        isFromDatabase: true
+      }));
+
+      setSearchedInsights(formattedSearches);
+    } catch (err) {
+      console.error('Failed to load previous searches:', err);
+    }
+  };
+
+  // Load previous searches on component mount
+  useEffect(() => {
+    loadPreviousSearches();
+  }, []);
+
+  const handleSearch = async () => {
+    if (!searchTerm.trim()) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please log in to search for job insights');
+      }
+
+      const response = await fetch('http://localhost:5002/api/job-searches/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ jobTitle: searchTerm.trim() })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch career insights');
+      }
+
+      const data = await response.json();
+      const jobSearch = data.jobSearch;
+
+      const newInsight = {
+        id: jobSearch._id,
+        title: jobSearch.jobTitle,
+        growth: jobSearch.jobGrowth !== null ? `${jobSearch.jobGrowth > 0 ? '+' : ''}${jobSearch.jobGrowth}%` : "N/A",
+        avgSalary: jobSearch.avgSalary || "N/A",
+        openings: jobSearch.openPositions ? (jobSearch.openPositions / 1000).toFixed(1) + 'k' : "N/A",
+        icon: "🔍",
+        timestamp: new Date(jobSearch.searchedAt).toLocaleString(),
+        isFromDatabase: true
+      };
+      
+      // Add new search result to the beginning of the array (newest first)
+      setSearchedInsights(prev => {
+        const filtered = prev.filter(insight => insight.id !== newInsight.id);
+        return [newInsight, ...filtered];
+      });
+      
+      // Reset carousel to show the new result first
+      setCarouselIndex(0);
+      setSearchTerm(""); // Clear search input
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Carousel navigation functions
+  const goToPrevious = () => {
+    setCarouselIndex(prev => Math.max(0, prev - 1));
+  };
+
+  const goToNext = () => {
+    const maxIndex = Math.max(0, searchedInsights.length + careerInsights.length - 3);
+    setCarouselIndex(prev => Math.min(maxIndex, prev + 1));
+  };
+
+  // Combine searched insights with default insights for display
+  const allInsights = [...searchedInsights, ...careerInsights];
+  const visibleInsights = allInsights.slice(carouselIndex, carouselIndex + 3);
+
   const getMatchColor = (percentage) => {
     if (percentage >= 80) return { color: 'hsl(142, 71%, 45%)', backgroundColor: 'hsl(142, 71%, 45%, 0.1)' };
     if (percentage >= 60) return { color: 'hsl(38, 92%, 50%)', backgroundColor: 'hsl(38, 92%, 50%, 0.1)' };
@@ -411,32 +528,176 @@ const CareerHub = () => {
         <p style={styles.subtitle}>Discover AI-matched job opportunities and career insights tailored for you</p>
       </div>
 
-      {/* Career Insights */}
+      {/* Career Market Insights */}
       <div style={styles.insightsCard}>
-        <h2 style={styles.insightsTitle}>Career Market Insights</h2>
-        <div style={styles.insightsGrid}>
-          {careerInsights.map((insight, index) => (
-            <div key={index} style={styles.insightItem}>
-              <div style={styles.insightHeader}>
-                <span style={styles.insightIcon}>{insight.icon}</span>
-                <h3 style={styles.insightTitle}>{insight.title}</h3>
-              </div>
-              <div style={styles.insightStats}>
-                <div style={styles.insightStat}>
-                  <span style={styles.insightLabel}>Job Growth:</span>
-                  <span style={{...styles.insightValue, color: 'hsl(142, 71%, 45%)'}}>{insight.growth}</span>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'}}>
+          <h2 style={{...styles.insightsTitle, marginBottom: '0'}}>Career Market Insights</h2>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search roles..."
+              className="pl-10 pr-4 py-2 border rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <Search 
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer" 
+              size={20}
+              onClick={handleSearch}
+            />
+          </div>
+        </div>
+        {isLoading && <p style={{textAlign: 'center', color: 'hsl(238, 64%, 59%)'}}>🔍 Searching for insights...</p>}
+        {error && <p style={{color: 'red', textAlign: 'center'}}>{error}</p>}
+        
+        {/* Carousel Navigation and Cards Container */}
+        <div style={{position: 'relative'}}>
+          {/* Navigation Buttons */}
+          {allInsights.length > 3 && (
+            <>
+              <button 
+                onClick={goToPrevious}
+                disabled={carouselIndex === 0}
+                style={{
+                  position: 'absolute',
+                  left: '-20px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: carouselIndex === 0 ? 'hsl(220, 13%, 91%)' : 'hsl(238, 64%, 59%)',
+                  color: carouselIndex === 0 ? 'hsl(215, 16%, 47%)' : 'white',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: carouselIndex === 0 ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  zIndex: 10
+                }}
+              >
+                <ChevronLeft size={20} />
+              </button>
+              
+              <button 
+                onClick={goToNext}
+                disabled={carouselIndex >= allInsights.length - 3}
+                style={{
+                  position: 'absolute',
+                  right: '-20px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: carouselIndex >= allInsights.length - 3 ? 'hsl(220, 13%, 91%)' : 'hsl(238, 64%, 59%)',
+                  color: carouselIndex >= allInsights.length - 3 ? 'hsl(215, 16%, 47%)' : 'white',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: carouselIndex >= allInsights.length - 3 ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  zIndex: 10
+                }}
+              >
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+          
+          {/* Cards Grid */}
+          <div style={{
+            ...styles.insightsGrid,
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            overflow: 'hidden'
+          }}>
+            {visibleInsights.map((insight, index) => {
+              const isSearchResult = searchedInsights.some(si => si.id === insight.id);
+              const isFromDatabase = insight.isFromDatabase;
+              return (
+                <div 
+                  key={insight.id || `default-${index}`} 
+                  style={{
+                    ...styles.insightItem,
+                    border: isSearchResult ? '2px solid hsl(238, 64%, 59%)' : '1px solid hsl(220, 13%, 91%)',
+                    position: 'relative'
+                  }}
+                >
+                  {isSearchResult && isFromDatabase && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '8px',
+                      right: '8px',
+                      background: 'hsl(142, 71%, 45%)',
+                      color: 'white',
+                      fontSize: '10px',
+                      padding: '2px 6px',
+                      borderRadius: '10px',
+                      fontWeight: 'bold'
+                    }}>
+                      SAVED
+                    </div>
+                  )}
+                  <div style={styles.insightHeader}>
+                    <span style={styles.insightIcon}>{insight.icon}</span>
+                    <h3 style={styles.insightTitle}>{insight.title}</h3>
+                  </div>
+                  <div style={styles.insightStats}>
+                    <div style={styles.insightStat}>
+                      <span style={styles.insightLabel}>Job Growth:</span>
+                      <span style={{...styles.insightValue, color: 'hsl(142, 71%, 45%)'}}>{insight.growth}</span>
+                    </div>
+                    <div style={styles.insightStat}>
+                      <span style={styles.insightLabel}>Avg Salary:</span>
+                      <span style={styles.insightValue}>{insight.avgSalary}</span>
+                    </div>
+                    <div style={styles.insightStat}>
+                      <span style={styles.insightLabel}>Open Positions:</span>
+                      <span style={styles.insightValue}>{insight.openings}</span>
+                    </div>
+                  </div>
+                  {isSearchResult && insight.timestamp && (
+                    <div style={{
+                      fontSize: '11px',
+                      color: 'hsl(215, 16%, 47%)',
+                      textAlign: 'center',
+                      marginTop: '8px',
+                      fontStyle: 'italic'
+                    }}>
+                      Searched: {insight.timestamp}
+                    </div>
+                  )}
                 </div>
-                <div style={styles.insightStat}>
-                  <span style={styles.insightLabel}>Avg Salary:</span>
-                  <span style={styles.insightValue}>{insight.avgSalary}</span>
-                </div>
-                <div style={styles.insightStat}>
-                  <span style={styles.insightLabel}>Open Positions:</span>
-                  <span style={styles.insightValue}>{insight.openings}</span>
-                </div>
-              </div>
+              );
+            })}
+          </div>
+          
+          {/* Carousel Indicator */}
+          {allInsights.length > 3 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginTop: '16px',
+              gap: '8px'
+            }}>
+              {Array.from({ length: Math.ceil(allInsights.length / 3) }).map((_, index) => (
+                <div
+                  key={index}
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: Math.floor(carouselIndex / 3) === index ? 'hsl(238, 64%, 59%)' : 'hsl(220, 13%, 91%)',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => setCarouselIndex(index * 3)}
+                />
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
 
